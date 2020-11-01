@@ -1,0 +1,13 @@
+spring:
+  datasource:
+    driver-class-name: com.mysql.jdbc.Driver
+    url: jdbc:mysql:///books
+    username: root
+    password: root
+    #type: com.alibaba.druid.pool.DruidDataSource
+
+mybatis:
+  mapper-locations: mapper/*.xml
+
+server:
+  port: 8080

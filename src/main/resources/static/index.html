@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>列表</title>
+    <!--bs样式-->
+    <link rel="stylesheet" href="frame/bootstrap/dist/css/bootstrap.min.css">
+    <!--Jquery依赖-->
+    <script src="frame/jquery/dist/jquery.min.js"></script>
+    <!--bs的JS库-->
+    <script src="/frame/bootstrap/dist/js/bootstrap.min.js"></script>
+    <!--引入vue-->
+    <script src="frame/node_modules/vue/dist/vue.min.js"></script>
+    <!--引入axios-->
+    <script src="frame/axios/dist/axios.min.js"></script>
+</head>
+<style>
+    .table {
+        text-align: center;
+    }
+</style>
+<body>
+<div class="container">
+    <div class="page-header">
+        <div class="row">
+            <div class="col-xs-2 col-sm-2 col-md-2 col-lg-2">
+                <ul v-for="c in category">
+                    <li :value="c.cid" ><a class="btn btn-success btn-sm" @click="findByBook(c.cid)">{{c.catename}}</a></li>
+                </ul>
+            </div>
+            <div class="col-xs-10 col-sm-10 col-md-10 col-lg-10">
+                <div class="panel panel-primary">
+                    <div class="panel-heading">
+                        <div class="panel-heading " style="padding: 0px">
+                            <a class="btn btn-primary btn-sm" data-toggle="modal" href="#modal" @click="bookEntity={}">新增图书</a>
+                        </div>
+                    </div>
+                    <div class="panel-body">
+                        <table class="table table-bordered table-hover">
+                            <tr>
+                                <td>编号</td>
+                                <td>名称</td>
+                                <td>作者</td>
+                                <td>出版社</td>
+                                <td>售价</td>
+                                <td>操作</td>
+                            </tr>
+                            <tr v-for="b in books">
+                                <td>{{b.bid}}</td>
+                                <td>{{b.bookname}}</td>
+                                <td>{{b.author}}</td>
+                                <td>{{b.publisher}}</td>
+                                <td>{{b.price}}</td>
+                                <td>
+                                    <a class="btn btn-success btn-sm" @click="toUpdate(b)">修改</a>
+                                    <a class="btn btn-danger btn-sm" @click="deleteBook(b.bid)">移除</a>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="modal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                    <h4 class="modal-title">编辑图书</h4>
+                </div>
+                {{bookEntity}}
+                <div class="modal-body">
+                    <form method="post" class="form-horizontal" id="form1">
+                        <input type="hidden" name="bid" id="bid">
+                        <div class="form-group">
+                            <label  class="col-sm-2 control-label">图书名称:</label>
+                            <div class="col-sm-10">
+                                <input v-model="bookEntity.bookname" type="text" class="form-control" placeholder="请输入图书名">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label  class="col-sm-2 control-label">作者:</label>
+                            <div class="col-sm-10">
+                                <input v-model="bookEntity.author" type="text" class="form-control" placeholder="请输入作者">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label  class="col-sm-2 control-label">出版社:</label>
+                            <div class="col-sm-10">
+                                <input v-model="bookEntity.publisher" type="text" class="form-control" placeholder="请输入出版社">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label  class="col-sm-2 control-label">价格:</label>
+                            <div class="col-sm-10">
+                                <input v-model="bookEntity.price" type="text" class="form-control" placeholder="请输入价格">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label  class="col-sm-2 control-label">分类:</label>
+                            <div class="col-sm-10">
+                                <select v-model="bookEntity.cid" class="form-control">
+                                    <option value="0">所有分类</option>
+                                    <option v-for="c in category" :value="c.cid">{{c.catename}}</option>
+                                </select>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+                    <button type="button" class="btn btn-primary" @click="saveBook()">保存</button>
+                </div>
+            </div><!-- /.modal-content -->
+        </div><!-- /.modal-dialog -->
+    </div><!-- /.modal -->
+</div>
+</body>
+</html>
+<script>
+    let vs = new Vue({
+        el: '.container',
+        data: {
+            books: [],
+            category: [],
+            bookEntity:[]
+        },
+        mounted() {
+            //查询所有书籍
+            this.findAllBook();
+            //查询所有类型
+            this.findAllCategory();
+        },
+        methods: {
+            //查询所有书籍方法
+            findAllBook() {
+                axios.post("/book/findAllBook").then(response => {
+                    this.books = response.data;
+                })
+            },
+            //查询所有类型方法
+            findAllCategory() {
+                axios.post("/cate/findAllCate").then(response => {
+                    this.category = response.data;
+                })
+            },
+            //去修改界面方法
+            toUpdate(b){
+                //打开模态框
+                $(".modal").modal("show");
+                //为表单中的书籍对象赋值
+                this.bookEntity = b;
+            },
+            //保存{是否有bid的值判断去修改还是新增}
+            saveBook(){
+                //定义url地址
+                let url = "/book/insertBook";
+                //获取bid的值，重新定义url；
+                if (this.bookEntity.bid){
+                    url = "/book/updateBook";
+                }
+                //向后台发送数据
+                axios.post(url,this.bookEntity).then(response=>{
+                    if (response.data.success){
+                        this.findAllBook();
+                    }else {
+                        alert(response.data.message);
+                    }
+                    //关闭模态框
+                    $(".modal").modal("hide");
+                })
+            },
+            //删除
+            deleteBook(bid){
+                axios.post("/book/deleteBook?bid="+bid).then(response=>{
+                    if (response.data.success()){
+                        this.findAllBook();
+                    }else {
+                        alert(response.data.message);
+                    }
+                })
+            },
+            //根据类型id找书
+            findByBook(cid){
+                axios.post("/book/findByBook?cid="+cid).then(response=>{
+                    this.books = response.data;
+                })
+            },
+        }
+    })
+</script>
